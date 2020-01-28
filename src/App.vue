@@ -22,8 +22,6 @@
 </template>
 
 <script>
-/* eslint-disable */
-
 import axios from "axios";
 import { Chart } from "highcharts-vue";
 
