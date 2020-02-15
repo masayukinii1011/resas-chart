@@ -1,41 +1,29 @@
 <template>
   <div id="app">
     <h1>都道府県別の総人口推移グラフ</h1>
-    <div class="prefecture-container">
+    <div class="prefectures-container">
       <h2>都道府県</h2>
-      <div class="prefecture-area">
-        <div v-for="prefecture in prefectures" :key="prefecture.id" class="prefecture">
-          <label :for="prefecture.id">
-            <input
-              type="checkbox"
-              :id="prefecture.id"
-              :checked="prefecture.isChecked"
-              @click="toggleChart(prefecture.id, prefecture.name, prefecture.isChecked)"
-            />
-            {{ prefecture.name }}
-          </label>
-        </div>
-      </div>
+      <Prefectures @onAddSeries="addSeries" @onRemoveSeries="removeSeries" />
     </div>
-    <highcharts :options="options"></highcharts>
+    <Highcharts :options="options" />
   </div>
 </template>
 
 <script>
-import axios from "axios";
 import { Chart } from "highcharts-vue";
-
-const ACCESS_TOKEN = process.env.VUE_APP_ACCESS_TOKEN;
+import Prefectures from "./Prefectures.vue";
 
 export default {
-  name: "app",
   components: {
-    highcharts: Chart
+    Highcharts: Chart,
+    Prefectures: Prefectures
   },
   data() {
     return {
-      prefectures: [],
+      /* Highchartsのプロパティ */
       options: {
+        /* seriesにオブジェクトを追加するとグラフに描画される */
+        series: [],
         title: {
           style: {
             display: "none"
@@ -75,66 +63,23 @@ export default {
           title: {
             text: "人口数"
           }
-        },
-        series: []
+        }
       }
     };
   },
-  mounted() {
-    this.initPrefectures();
-  },
   methods: {
-    fetchAPI: function(path) {
-      const response = axios.get(
-        `https://opendata.resas-portal.go.jp/api/v1/${path}`,
-        {
-          headers: { "X-API-KEY": ACCESS_TOKEN }
-        }
-      );
-      return response;
+    /* seriesに追加 */
+    addSeries: function(id, name, population) {
+      this.options.series.push({
+        id: id,
+        name: name,
+        data: population
+      });
     },
-    initPrefectures: async function() {
-      const path = "prefectures";
-      try {
-        const response = await this.fetchAPI(path);
-        this.prefectures = response.data.result.map(val => {
-          return {
-            id: val["prefCode"],
-            name: val["prefName"],
-            isChecked: false
-          };
-        });
-      } catch (error) {
-        console.error(error.message);
-      }
-    },
-    insertChart: async function(id, name) {
-      const path = `population/composition/perYear?cityCode=-&prefCode=${id}`;
-      try {
-        const response = await this.fetchAPI(path);
-        const population = response.data.result.data[0].data.map(
-          val => val["value"]
-        );
-        this.options.series.push({
-          id: id,
-          name: name,
-          data: population
-        });
-        this.prefectures[id - 1].isChecked = true;
-      } catch (error) {
-        console.error(error.message);
-      }
-    },
-    deleteChart: function(id) {
+
+    /* seriesから削除 */
+    removeSeries: function(id) {
       this.options.series = this.options.series.filter(val => val.id !== id);
-      this.prefectures[id - 1].isChecked = false;
-    },
-    toggleChart: function(id, name, isChecked) {
-      if (isChecked) {
-        this.deleteChart(id);
-      } else {
-        this.insertChart(id, name);
-      }
     }
   }
 };
@@ -150,25 +95,12 @@ h1 {
   font-size: 20px;
 }
 
-.prefecture-container {
+.prefectures-container {
   margin-left: 4%;
 }
 
 h2 {
   font-size: 17px;
-}
-
-.prefecture-area {
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr 1fr;
-}
-
-.prefecture {
-  font-size: 15px;
-}
-
-label {
-  cursor: pointer;
 }
 
 @media screen and (max-width: 425px) {
@@ -180,12 +112,8 @@ label {
     font-size: 15px;
   }
 
-  .prefecture-container {
+  .prefectures-container {
     margin-left: 0;
-  }
-
-  .prefecture {
-    font-size: 13px;
   }
 }
 </style>
