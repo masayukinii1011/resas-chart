@@ -80,62 +80,66 @@ export default {
       }
     };
   },
+  mounted() {
+    this.initPrefectures();
+  },
   methods: {
-    initPrefectures: function() {
-      axios
-        .get("https://opendata.resas-portal.go.jp/api/v1/prefectures", {
+    fetchAPI: function(path) {
+      const response = axios.get(
+        `https://opendata.resas-portal.go.jp/api/v1/${path}`,
+        {
           headers: { "X-API-KEY": ACCESS_TOKEN }
-        })
-        .then(response => {
-          this.prefectures = response.data.result.map(val => {
-            return {
-              id: val["prefCode"],
-              name: val["prefName"],
-              isChecked: false
-            };
-          });
-        });
+        }
+      );
+      return response;
     },
-    showChart: function(id, name) {
-      axios
-        .get(
-          `https://opendata.resas-portal.go.jp/api/v1/population/composition/perYear?cityCode=-&prefCode=${id}`,
-          {
-            headers: {
-              "X-API-KEY": ACCESS_TOKEN
-            }
-          }
-        )
-        .then(response => {
-          const population = response.data.result.data[0].data.map(
-            val => val["value"]
-          );
-          this.options.series.push({
-            id: id,
-            name: name,
-            data: population
-          });
-          this.prefectures[id - 1].isChecked = true;
+    initPrefectures: async function() {
+      const path = "prefectures";
+      try {
+        const response = await this.fetchAPI(path);
+        this.prefectures = response.data.result.map(val => {
+          return {
+            id: val["prefCode"],
+            name: val["prefName"],
+            isChecked: false
+          };
         });
+      } catch (error) {
+        console.error(error.message);
+      }
     },
-    hideChart: function(id) {
+    insertChart: async function(id, name) {
+      const path = `population/composition/perYear?cityCode=-&prefCode=${id}`;
+      try {
+        const response = await this.fetchAPI(path);
+        const population = response.data.result.data[0].data.map(
+          val => val["value"]
+        );
+        this.options.series.push({
+          id: id,
+          name: name,
+          data: population
+        });
+        this.prefectures[id - 1].isChecked = true;
+      } catch (error) {
+        console.error(error.message);
+      }
+    },
+    deleteChart: function(id) {
       this.options.series = this.options.series.filter(val => val.id !== id);
       this.prefectures[id - 1].isChecked = false;
     },
     toggleChart: function(id, name, isChecked) {
       if (isChecked) {
-        this.hideChart(id);
+        this.deleteChart(id);
       } else {
-        this.showChart(id, name);
+        this.insertChart(id, name);
       }
     }
-  },
-  mounted() {
-    this.initPrefectures();
   }
 };
 </script>
-<style>
+<style scoped>
 #app {
   max-width: 1024px;
   margin: 0 auto;
