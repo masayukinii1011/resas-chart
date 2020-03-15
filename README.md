@@ -2,6 +2,9 @@
 
 県毎の人口推移をグラフにして可視化、比較できるアプリをVue.jsで制作しました。  
 RESAS-API(地域経済分析システム)から人口データを受け取り、Highchartsでグラフを描画しています。  
+__3/15更新__  
+こちらの記事を参考に、ホスティング先をnetlifyからAWSのS３に変更してみました。
+https://qiita.com/kiyokiyo_kzsby/items/77bdb81a1ce1852b30ca
 
 ### Highcharts
 Webでグラフを描写するためのJavaScriptライブラリです。  
